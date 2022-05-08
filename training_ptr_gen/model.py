@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from data_util import config
 from numpy import random
+import sys
 
 use_cuda = config.use_gpu and torch.cuda.is_available()
 
@@ -111,7 +112,7 @@ class Attention(nn.Module):
 
         attn_dist_ = F.softmax(scores, dim=1)*enc_padding_mask # B x t_k
         normalization_factor = attn_dist_.sum(1, keepdim=True)
-        attn_dist = attn_dist_ / normalization_factor
+        attn_dist = attn_dist_ / (normalization_factor.view(-1,1) + torch.ones_like(normalization_factor.view(-1, 1)) * sys.float_info.epsilon) # bug for nan
 
         attn_dist = attn_dist.unsqueeze(1)  # B x 1 x t_k
         c_t = torch.bmm(attn_dist, encoder_outputs)  # B x 1 x n
